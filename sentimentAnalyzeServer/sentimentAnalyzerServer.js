@@ -1,4 +1,24 @@
 const express = require('express');
+const dotenv = require('dotenv');
+dotenv.config();
+
+const getNLUInstance = () => {
+    let api_key = process.env.API_KEY;
+    let api_url = process.env.API_URL;
+    
+    const NaturalLanguageUnderstandingV1 = require('ibm-watson/natural-language-understanding/v1');
+    const { IamAuthenticator } = require('ibm-watson/auth');
+    
+    const naturalLanguageUnderstanding = new NaturalLanguageUnderstandingV1({
+       version: '2021-03-25',
+       authenticator: new IamAuthenticator({
+       apikey: '{apikey}',
+  }),
+  serviceUrl: '{url}',
+});
+return naturalLanguageUnderstanding;
+}
+
 const app = new express();
 
 app.use(express.static('client'))
@@ -11,23 +31,80 @@ app.get("/",(req,res)=>{
   });
 
 app.get("/url/emotion", (req,res) => {
+    const analyzeParams = {
+        'url': req.query.url,
+        'features': {
+            'emotion': {
+            }
+        } 
+    };
 
-    return res.send({"happy":"90","sad":"10"});
+    const nlu = getNLUInstance();
+    nlu.analyze(analyzeParams)
+        .then(analysisResults => {
+
+            return res.send(analysisResults.result.emotion.document.emotion);
+        })
+        .catch(err => {
+            console.log('error:', err);
+        });
 });
 
 app.get("/url/sentiment", (req,res) => {
-    return res.send("url sentiment for "+req.query.url);
+    const analyzeParams = {
+        'url': req.query.url,
+        'features': {
+            'sentiment': {
+            }
+        }
+    }
+    const nlu = getNLUInstance()
+    nlu.analyze(analyzeParams)
+        .then(analysisResults => {
+            return res.send(analysisResults.result.sentiment.document.label);
+         })
+        .catch(err => {
+            console.log('error:', err);
+        })
 });
 
 app.get("/text/emotion", (req,res) => {
-    return res.send({"happy":"10","sad":"90"});
+    const analyzeParams = {
+        'text': req.query.text,
+        'features': {
+            'emotion': {
+            }
+        } 
+    };
+
+    const nlu = getNLUInstance();
+    nlu.analyze(analyzeParams)
+        .then(analysisResults => {
+            return res.send(analysisResults.result.emotion.document.emotion);
+        })
+        .catch(err => {
+            console.log('error:', err);
+        });
 });
 
 app.get("/text/sentiment", (req,res) => {
-    return res.send("text sentiment for "+req.query.text);
+    const analyzeParams = {
+        'text': req.query.text,
+        'features': {
+            'sentiment': {
+            }
+        }
+    }
+    const nlu = getNLUInstance()
+    nlu.analyze(analyzeParams)
+        .then(analysisResults => {
+            return res.send(analysisResults.result.sentiment.document.label);
+         })
+        .catch(err => {
+            console.log('error:', err);
+        })
 });
 
 let server = app.listen(8080, () => {
     console.log('Listening', server.address().port)
 })
-
